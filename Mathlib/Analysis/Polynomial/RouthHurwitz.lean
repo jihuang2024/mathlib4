@@ -177,12 +177,12 @@ private lemma cubic_re_im (b c d : ℝ) (z : ℂ)
     z.im * (3 * z.re ^ 2 - z.im ^ 2 + 2 * b * z.re + c) = 0 := by
   constructor
   · have h := congr_arg re hz
-    simp only [add_re, mul_re, mul_im, ofReal_re, ofReal_im, zero_mul, mul_zero, sub_zero,
-               add_zero, zero_re, show z ^ 3 = z ^ 2 * z from by ring, sq] at h
+    simp only [add_re, mul_re, mul_im, ofReal_re, ofReal_im, zero_mul, sub_zero,
+               zero_re, show z ^ 3 = z ^ 2 * z from by ring, sq] at h
     nlinarith [sq_nonneg z.re, sq_nonneg z.im, mul_comm z.im z.re]
   · have h := congr_arg im hz
-    simp only [add_im, mul_im, mul_re, ofReal_re, ofReal_im, zero_mul, mul_zero, add_zero,
-               sub_zero, zero_im, show z ^ 3 = z ^ 2 * z from by ring, sq] at h
+    simp only [add_im, mul_im, mul_re, ofReal_re, ofReal_im, zero_mul, add_zero,
+               zero_im, show z ^ 3 = z ^ 2 * z from by ring, sq] at h
     nlinarith [sq_nonneg z.re, sq_nonneg z.im, mul_comm z.im z.re]
 
 -- Helper: every monic real cubic has a real root (via IVT with explicit bounds)
@@ -195,11 +195,11 @@ private lemma cubic_has_real_root (b c d : ℝ) :
   have hKc : |c| ≤ K - 2 := by linarith [hK_def, abs_nonneg b, abs_nonneg d]
   have hKd : |d| ≤ K - 2 := by linarith [hK_def, abs_nonneg b, abs_nonneg c]
   have hpos : 0 < p.eval K := by
-    simp only [hp_def, eval_add, eval_mul, eval_pow, eval_X, eval_C, one_mul]
+    simp only [hp_def, eval_add, eval_mul, eval_pow, eval_X, eval_C]
     nlinarith [le_abs_self b, neg_abs_le b, le_abs_self c, neg_abs_le c,
                le_abs_self d, neg_abs_le d, sq_nonneg K, sq_nonneg (K - 2)]
   have hneg : p.eval (-K) < 0 := by
-    simp only [hp_def, eval_add, eval_mul, eval_pow, eval_X, eval_C, one_mul]
+    simp only [hp_def, eval_add, eval_mul, eval_pow, eval_X, eval_C]
     nlinarith [le_abs_self b, neg_abs_le b, le_abs_self c, neg_abs_le c,
                le_abs_self d, neg_abs_le d, sq_nonneg K, sq_nonneg (K - 2)]
   have hle : -K ≤ K := by linarith
@@ -220,7 +220,7 @@ theorem isHurwitzStable_cubic :
       have hcy : ((X ^ 3 + C b * X ^ 2 + C c * X + C d : ℝ[X]).map (algebraMap ℝ ℂ)).IsRoot ↑y := by
         rw [cubic_isRoot_iff]
         have h := IsRoot.def.mp hy
-        simp only [eval_add, eval_mul, eval_pow, eval_C, eval_X, one_mul] at h
+        simp only [eval_add, eval_mul, eval_pow, eval_C, eval_X] at h
         exact_mod_cast h
       have := h ↑y hcy
       simpa [Complex.ofReal_re] using this
@@ -243,18 +243,14 @@ theorem isHurwitzStable_cubic :
     let q : ℝ[X] := X ^ 2 + C e * X + C f
     have hfactor : (X ^ 3 + C b * X ^ 2 + C c * X + C d : ℝ[X]) = (X - C r) * q := by
       have hdeq : d = -(r ^ 3 + b * r ^ 2 + c * r) := by linarith
-      simp only [q, e, f, hdeq, C_neg, C_add, C_mul, C_sub, C_pow]
+      simp only [q, e, f, hdeq, C_neg, C_add, C_mul, C_pow]
       ring
     -- q is Hurwitz stable (its roots are also roots of p)
     have hq_stable : IsHurwitzStable q := by
       intro w hw
       apply h
-      rw [show (X ^ 3 + C b * X ^ 2 + C c * X + C d : ℝ[X]).map (algebraMap ℝ ℂ) =
-          (X - C (↑r : ℂ)) * q.map (algebraMap ℝ ℂ) from by
-        rw [hfactor]; simp [Polynomial.map_mul, Polynomial.map_sub, Polynomial.map_X,
-                            Polynomial.map_C, RCLike.algebraMap_eq_ofReal]]
-      simp only [IsRoot.def, eval_mul]
-      simp [hw]
+      rw [hfactor, Polynomial.map_mul, IsRoot.def, Polynomial.eval_mul]
+      exact mul_eq_zero.mpr (Or.inr hw)
     -- Apply quadratic theorem to q
     have hq_iff := isHurwitzStable_quadratic (b := e) (c := f)
     rw [show X ^ 2 + C e * X + C f = q from rfl] at hq_iff
@@ -282,9 +278,9 @@ theorem isHurwitzStable_cubic :
     rcases mul_eq_zero.mp him with him0 | him1
     · -- Real root: z.re^3 + b*z.re^2 + c*z.re + d = 0
       have hreal : z.re ^ 3 + b * z.re ^ 2 + c * z.re + d = 0 := by
-        simp only [him0, mul_zero, sub_zero] at hre; linarith
+        simp only [him0] at hre; linarith
       by_contra h
-      push_neg at h
+      push Not at h
       nlinarith [sq_nonneg z.re, mul_nonneg (mul_nonneg hb.le (sq_nonneg z.re)) (le_of_lt hc)]
     · -- Complex root: z.im^2 = 3*z.re^2 + 2*b*z.re + c
       have hysq : z.im ^ 2 = 3 * z.re ^ 2 + 2 * b * z.re + c := by linarith [him1]
@@ -292,8 +288,8 @@ theorem isHurwitzStable_cubic :
       have hcomb : 8 * z.re ^ 3 + 8 * b * z.re ^ 2 + 2 * (b ^ 2 + c) * z.re + (b * c - d) = 0 := by
         nlinarith [sq_nonneg z.re, hre, hysq, mul_self_nonneg z.re]
       by_contra h
-      push_neg at h
+      push Not at h
       nlinarith [sq_nonneg z.re, mul_nonneg hb.le (sq_nonneg z.re),
-                 mul_nonneg (add_nonneg (sq_nonneg b) hc.le) (le_of_lt (lt_of_lt_of_le hd h))]
+                 mul_nonneg (add_nonneg (sq_nonneg b) hc.le) h, sub_pos.mpr hbc]
 
 end Polynomial
