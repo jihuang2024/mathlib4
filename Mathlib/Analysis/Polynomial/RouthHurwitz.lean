@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Polynomial.Degree.SmallDegree
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.Analysis.Polynomial.Order
 public import Mathlib.Analysis.RCLike.Basic
-public import Mathlib.Analysis.RCLike.Lemmas
 
 /-!
 # Hurwitz Stability of Real Polynomials
